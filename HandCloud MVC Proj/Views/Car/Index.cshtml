@@ -1,0 +1,175 @@
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+<@{
+    ViewData["Title"] = "Car List";
+}
+
+<h1>HandCloud Project</h1>
+
+<br />
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Brand</th>
+            <th scope="col">Model</th>
+            <th scope="col">Year</th>
+            <th scope="col">Kilometers</th>
+            <th scope="col">Description</th>
+            <th scope="col">Price</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="t_body">
+    </tbody>
+
+</table>
+
+<script type="text/javascript">
+
+        window.onload = function () {
+            reloadData();
+        }
+
+        function reloadData() {
+            $("#t_body").html("");
+            debugger;
+            $.ajax({
+                type: "GET",
+                url: '@Configuration["WEBAPI:Host"]/@Configuration["WEBAPI:List"]',
+            }).done(function (data, textStatus, jqXHR) {
+                var row;
+                $.each(data, function (index, value) {
+                    row = "";
+                    row += "<tr id='car_" + value.id + "'>";
+                    row += "<td>" + value.id + "</td>";
+                    row += "<td>" + value.brand + "</td>";
+                    row += "<td>" + value.model + "</td>";
+                    row += "<td>" + value.year + "</td>";
+                    row += "<td>" + value.kilometers + "</td>";
+                    row += "<td>" + value.description + "</td>";
+                    row += "<td>" + value.price + "</td>";
+                    row += "<td><a href='#' onclick='deleteCar(" + value.id + ")'>DELETE</a> / <a href = '#' onclick='getVehicleInfo (" + value.id + ")'>UPDATE</a></td>";
+                    row += "</tr>";
+                    $("#t_body").append(row)
+                });
+            });
+        }
+</script>
+<hr />
+<br />
+    <div class="row justify-content-center">
+        <div class="col-md-5" style="border: 1px solid #c5c5c5; border-radius: 5px; background-color: #effdff; padding: 10px;">
+            <h2 id="form_type_title">Create</h2>
+            <form id="car_form">
+                <input type="hidden" id="car_id" name="Id" value="0" />
+                <div class="form-group">
+                    <label for="car_brand">Brand</label>
+                    <input type="text" class="form-control" id="car_brand" name="Brand">
+                </div>
+                <div class="form-group">
+                    <label for="car_model">Model</label>
+                    <input type="text" class="form-control" id="car_model" name="Model">
+                </div>
+                <div class="form-group">
+                    <label for="car_year">Year</label>
+                    <input type="number" class="form-control" id="car_year" name="Year">
+                </div>
+                <div class="form-group">
+                    <label for="car_kilometers">Kilometers</label>
+                    <input type="number" max="2019" class="form-control" id="car_kilometers" name="Kilometers" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="car_description">Description</label>
+                    <input type="text" class="form-control" id="car_description" name="Description">
+                </div>
+                <div class="form-group">
+                    <label for="car_price">Price</label>
+                    <input type="number" step=".01" class="form-control" id="car_price" name="Price" value="0">
+                </div>
+                <button type="button" onclick="create_update_Vehicle()" class="btn btn-light float-right"><i class="fa fa-plus"></i> Create</button>
+                <button type="button" onclick="clearForm ()" class="btn btn-light float-right"><i class="fa fa-times"></i> Cancel</button>
+            </form>
+        </div>
+
+        <script type="text/javascript">
+            function clearForm (){
+                $('#car_form').trigger("reset");
+                $("#form_type_title").html("Create");
+                $("#car_id").val(0)
+            }
+
+            function getVehicleInfo (id){
+                $.ajax({    
+                    type: "GET",
+                    url: '@Configuration["WEBAPI:Host"]/@Configuration["WEBAPI:Get"]',
+                    data: "Id=" + id ,
+                }).done(function (data) {
+                    $("#car_id").val(data.id);
+                    $("#car_brand").val(data.brand);
+                    $("#car_year").val(data.year);
+                    $("#car_model").val(data.model);
+                    $("#car_kilometers").val(data.kilometers);
+                    $("#car_description").val(data.description);
+                    $("#car_price").val(data.price);
+
+                    $("#form_type_title").html("Vehiculo: " + data.id);
+                });
+            }
+
+            function deleteCar(id) {
+                $.ajax({
+                    type: "GET",
+                    url: '@Configuration["WEBAPI:Host"]/@Configuration["WEBAPI:Delete"]',
+                    data: "Id=" + id,
+                }).done(function (data, textStatus, jqXHR) {
+                    reloadData();
+                });
+            }
+
+            function create_update_Vehicle() {
+                //Create
+                debugger;
+                var car = {
+                    Id: $("#car_id").val(),
+                    Brand: $("#car_brand").val(),
+                    Model: $("#car_model").val(),
+                    Year: $("#car_year").val(),
+                    Kilometers: $("#car_kilometers").val(),
+                    Description: $("#car_description").val(),
+                    Price: $("#car_price").val(),
+                }
+                var data = JSON.stringify(car);
+                if ($("#car_id").val() == "0") {
+                    $.ajax({
+                        contentType: "application/json",
+                        type: "POST",
+                        url: '@Configuration["WEBAPI:Host"]/@Configuration["WEBAPI:Create"]',
+                        data: data,
+                        dataType: "json"
+                    }).always(function () {
+                        reloadData();
+                    });
+                }
+                //UPDATE
+                else {
+                    $.ajax({
+                        contentType: "application/json",
+                        type: "POST",
+                        url: '@Configuration["WEBAPI:Host"]/@Configuration["WEBAPI:Update"]',
+                        data: data,
+                        dataType: "json"
+                    }).always(function () {
+                        reloadData();
+                    });
+                }
+                
+                clearForm ();
+            }
+        </script>
+    </div>
+<br />
+<br />
+
+<p>Request URL to @Configuration["WEBAPI:Host"]</p>
